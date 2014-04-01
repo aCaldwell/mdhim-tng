@@ -157,10 +157,10 @@ int mdhimClose(struct mdhim_t *md) {
 
 	MPI_Barrier(md->mdhim_client_comm);
 	//Stop range server if I'm a range server	
-	/* if (im_range_server(md) && (ret = range_server_stop(md)) != MDHIM_SUCCESS) {
+	if (im_range_server(md) && (ret = range_server_stop(md)) != MDHIM_SUCCESS) {
 		return MDHIM_ERROR;
 	}
-    */
+
 	//Free up memory used by the partitioner
 	partitioner_release();
 
