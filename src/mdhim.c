@@ -196,12 +196,10 @@ int mdhimClose(struct mdhim_t *md) {
 		free(stat);
 	}
 
-       	MPI_Barrier(md->mdhim_client_comm);
+    MPI_Barrier(md->mdhim_client_comm);
 	MPI_Comm_free(&md->mdhim_client_comm);
 	MPI_Comm_free(&md->mdhim_comm);
-	 if (!im_range_server(md)) {
-        free(md);
-	}
+    free(md);
 
 	//Close MLog
 	mlog_close();
