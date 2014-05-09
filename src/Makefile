@@ -15,7 +15,7 @@ ifeq ($(MYSQLDB),1)
 endif
 
 
-all:	mdhim.o lib dylib 
+all:	mdhim.o lib dylib
 
 mdhim.o: mdhim.c $(OBJS)
 	$(CC) -c $< $(CINC) $(CLIBS) -lleveldb

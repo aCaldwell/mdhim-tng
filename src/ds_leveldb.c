@@ -241,7 +241,7 @@ int mdhim_leveldb_open(void **dbh, void **dbs, char *path, int flags,
 	leveldb_options_set_comparator(options, cmp);
 	//Check to see if the given path + "_stat" and the null char will be more than the max
 	if (strlen(path) + 6 > PATH_MAX) {
-		mlog(MDHIM_SERVER_CRIT, "Error opening leveldb database - path provided is too long");
+		//mlog(MDHIM_SERVER_CRIT, "Error opening leveldb database - path provided is too long");
 		return MDHIM_DB_ERROR;
 	}
 	sprintf(stats_path, "%s_stats", path);
@@ -250,7 +250,7 @@ int mdhim_leveldb_open(void **dbh, void **dbs, char *path, int flags,
 	//Set the output handle
 	*((leveldb_t **) dbh) = db;
 	if (err != NULL) {
-		mlog(MDHIM_SERVER_CRIT, "Error opening leveldb database");
+		//mlog(MDHIM_SERVER_CRIT, "Error opening leveldb database");
 		return MDHIM_DB_ERROR;
 	}
 
@@ -260,7 +260,7 @@ int mdhim_leveldb_open(void **dbh, void **dbs, char *path, int flags,
 	db = leveldb_open(stat_options, stats_path, &err);
 	*((leveldb_t **) dbs) = db;
 	if (err != NULL) {
-		mlog(MDHIM_SERVER_CRIT, "Error opening leveldb database");
+		//mlog(MDHIM_SERVER_CRIT, "Error opening leveldb database");
 		return MDHIM_DB_ERROR;
 	}
 
@@ -315,13 +315,13 @@ int mdhim_leveldb_put(void *dbh, void *key, int key_len, void *data, int32_t dat
     options = (leveldb_writeoptions_t *) mstore_opts->db_ptr4;    	    
     leveldb_put(db, options, key, key_len, data, data_len, &err);
     if (err != NULL) {
-	    mlog(MDHIM_SERVER_CRIT, "Error putting key/value in leveldb");
+	    //mlog(MDHIM_SERVER_CRIT, "Error putting key/value in leveldb");
 	    return MDHIM_DB_ERROR;
     }
 
     gettimeofday(&end, NULL);
-    mlog(MDHIM_SERVER_DBG, "Took: %d seconds to put the record", 
-	 (int) (end.tv_sec - start.tv_sec));
+    //mlog(MDHIM_SERVER_DBG, "Took: %d seconds to put the record", 
+	 //(int) (end.tv_sec - start.tv_sec));
 
     return MDHIM_SUCCESS;
 }
@@ -361,13 +361,13 @@ int mdhim_leveldb_batch_put(void *dbh, void **keys, int32_t *key_lens,
 	leveldb_write(db, options, write_batch, &err);
 	leveldb_writebatch_destroy(write_batch);
 	if (err != NULL) {
-		mlog(MDHIM_SERVER_CRIT, "Error in batch put in leveldb");
+		//mlog(MDHIM_SERVER_CRIT, "Error in batch put in leveldb");
 		return MDHIM_DB_ERROR;
 	}
 	
 	gettimeofday(&end, NULL);
-	mlog(MDHIM_SERVER_DBG, "Took: %d seconds to put %d records", 
-	     (int) (end.tv_sec - start.tv_sec), num_records);
+	//mlog(MDHIM_SERVER_DBG, "Took: %d seconds to put %d records", 
+	  //   (int) (end.tv_sec - start.tv_sec), num_records);
 	
 	return MDHIM_SUCCESS;
 }
@@ -398,7 +398,7 @@ int mdhim_leveldb_get(void *dbh, void *key, int key_len, void **data, int32_t *d
 	*data = NULL;
 	ldb_data = leveldb_get(db, options, key, key_len, &ldb_data_len, &err);
 	if (err != NULL) {
-		mlog(MDHIM_SERVER_CRIT, "Error getting value in leveldb");
+		//mlog(MDHIM_SERVER_CRIT, "Error getting value in leveldb");
 		return MDHIM_DB_ERROR;
 	}
 
@@ -459,7 +459,7 @@ int mdhim_leveldb_get_next(void *dbh, void **key, int *key_len,
 	} else {
 		leveldb_iter_seek(iter, old_key, old_key_len);
 		if (!leveldb_iter_valid(iter)) { 
-			mlog(MDHIM_SERVER_DBG2, "Could not get a valid iterator in leveldb");
+			//mlog(MDHIM_SERVER_DBG2, "Could not get a valid iterator in leveldb");
 			goto error;
 		}
 
@@ -496,8 +496,8 @@ int mdhim_leveldb_get_next(void *dbh, void **key, int *key_len,
         //Destroy iterator
 	leveldb_iter_destroy(iter);      
 	gettimeofday(&end, NULL);
-	mlog(MDHIM_SERVER_DBG, "Took: %d seconds to get the next record", 
-	     (int) (end.tv_sec - start.tv_sec));
+	//mlog(MDHIM_SERVER_DBG, "Took: %d seconds to get the next record", 
+	  //   (int) (end.tv_sec - start.tv_sec));
 	return ret;
 
 error:	
@@ -556,7 +556,7 @@ int mdhim_leveldb_get_prev(void *dbh, void **key, int *key_len,
 	} else {
 		leveldb_iter_seek(iter, old_key, old_key_len);
 		if (!leveldb_iter_valid(iter)) { 
-			mlog(MDHIM_SERVER_DBG2, "Could not get a valid iterator in leveldb");
+			//mlog(MDHIM_SERVER_DBG2, "Could not get a valid iterator in leveldb");
 			goto error;
 		}
 
@@ -593,8 +593,8 @@ int mdhim_leveldb_get_prev(void *dbh, void **key, int *key_len,
         //Destroy iterator
 	leveldb_iter_destroy(iter);      
 	gettimeofday(&end, NULL);
-	mlog(MDHIM_SERVER_DBG, "Took: %d seconds to get the previous record", 
-	     (int) (end.tv_sec - start.tv_sec));
+	//mlog(MDHIM_SERVER_DBG, "Took: %d seconds to get the previous record", 
+	  //   (int) (end.tv_sec - start.tv_sec));
 	return ret;
 
 error:	
@@ -661,7 +661,7 @@ int mdhim_leveldb_del(void *dbh, void *key, int key_len,
 	options = (leveldb_writeoptions_t *) mstore_opts->db_ptr4;
 	leveldb_delete(db, options, key, key_len, &err);
 	if (err != NULL) {
-		mlog(MDHIM_SERVER_CRIT, "Error deleting key in leveldb");
+		//mlog(MDHIM_SERVER_CRIT, "Error deleting key in leveldb");
 		return MDHIM_DB_ERROR;
 	}
  

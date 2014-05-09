@@ -50,14 +50,14 @@ struct mdhim_rm_t *local_client_put(struct mdhim_t *md, struct mdhim_putm_t *pm)
 	work_item *item;
 
 	if ((item = malloc(sizeof(work_item))) == NULL) {
-		mlog(MDHIM_CLIENT_CRIT, "Error while allocating memory for client");
+		//mlog(MDHIM_CLIENT_CRIT, "Error while allocating memory for client");
 		return NULL;
 	}
 
 	item->message = (void *)pm;
 	item->source = md->mdhim_rank;
 	if ((ret = range_server_add_work(md, item)) != MDHIM_SUCCESS) {
-		mlog(MDHIM_CLIENT_CRIT, "Error adding work to range server in local_client_put");
+		//mlog(MDHIM_CLIENT_CRIT, "Error adding work to range server in local_client_put");
 		return NULL;
 	}
 	
@@ -80,14 +80,14 @@ struct mdhim_rm_t *local_client_bput(struct mdhim_t *md, struct mdhim_bputm_t *b
 	work_item *item;
         
 	if ((item = malloc(sizeof(work_item))) == NULL) {
-		mlog(MDHIM_CLIENT_CRIT, "Error while allocating memory for client");
+		//mlog(MDHIM_CLIENT_CRIT, "Error while allocating memory for client");
 		return NULL;
 	}
 
 	item->message = (void *)bpm;
 	item->source = md->mdhim_rank;
 	if ((ret = range_server_add_work(md, item)) != MDHIM_SUCCESS) {
-		mlog(MDHIM_CLIENT_CRIT, "Error adding work to range server in local_client_put");
+		//mlog(MDHIM_CLIENT_CRIT, "Error adding work to range server in local_client_put");
 		return NULL;
 	}
 	
@@ -110,14 +110,14 @@ struct mdhim_getrm_t *local_client_get(struct mdhim_t *md, struct mdhim_getm_t *
 	work_item *item;
 
 	if ((item = malloc(sizeof(work_item))) == NULL) {
-		mlog(MDHIM_CLIENT_CRIT, "Error while allocating memory for client");
+		//mlog(MDHIM_CLIENT_CRIT, "Error while allocating memory for client");
 		return NULL;
 	}
 
 	item->message = (void *)gm;
 	item->source = md->mdhim_rank;
 	if ((ret = range_server_add_work(md, item)) != MDHIM_SUCCESS) {
-		mlog(MDHIM_CLIENT_CRIT, "Error adding work to range server in local_client_put");
+		//mlog(MDHIM_CLIENT_CRIT, "Error adding work to range server in local_client_put");
 		return NULL;
 	}
 	
@@ -140,14 +140,14 @@ struct mdhim_bgetrm_t *local_client_bget(struct mdhim_t *md, struct mdhim_bgetm_
 	work_item *item;
 
 	if ((item = malloc(sizeof(work_item))) == NULL) {
-		mlog(MDHIM_CLIENT_CRIT, "Error while allocating memory for client");
+		//mlog(MDHIM_CLIENT_CRIT, "Error while allocating memory for client");
 		return NULL;
 	}
 
 	item->message = (void *)bgm;
 	item->source = md->mdhim_rank;
 	if ((ret = range_server_add_work(md, item)) != MDHIM_SUCCESS) {
-		mlog(MDHIM_CLIENT_CRIT, "Error adding work to range server in local_client_put");
+		//mlog(MDHIM_CLIENT_CRIT, "Error adding work to range server in local_client_put");
 		return NULL;
 	}
 	
@@ -170,14 +170,14 @@ struct mdhim_bgetrm_t *local_client_bget_op(struct mdhim_t *md, struct mdhim_get
 	work_item *item;
 
 	if ((item = malloc(sizeof(work_item))) == NULL) {
-		mlog(MDHIM_CLIENT_CRIT, "Error while allocating memory for client");
+		//mlog(MDHIM_CLIENT_CRIT, "Error while allocating memory for client");
 		return NULL;
 	}
 
 	item->message = (void *)gm;
 	item->source = md->mdhim_rank;
 	if ((ret = range_server_add_work(md, item)) != MDHIM_SUCCESS) {
-		mlog(MDHIM_CLIENT_CRIT, "Error adding work to range server in local_client_put");
+		//mlog(MDHIM_CLIENT_CRIT, "Error adding work to range server in local_client_put");
 		return NULL;
 	}
 	
@@ -200,14 +200,14 @@ struct mdhim_rm_t *local_client_commit(struct mdhim_t *md, struct mdhim_basem_t 
 	work_item *item;
 
 	if ((item = malloc(sizeof(work_item))) == NULL) {
-		mlog(MDHIM_CLIENT_CRIT, "Error while allocating memory for client");
+		//mlog(MDHIM_CLIENT_CRIT, "Error while allocating memory for client");
 		return NULL;
 	}
 
 	item->message = (void *)cm;
 	item->source = md->mdhim_rank;
 	if ((ret = range_server_add_work(md, item)) != MDHIM_SUCCESS) {
-		mlog(MDHIM_CLIENT_CRIT, "Error adding work to range server in local_client_put");
+		//mlog(MDHIM_CLIENT_CRIT, "Error adding work to range server in local_client_put");
 		return NULL;
 	}
 	
@@ -230,14 +230,14 @@ struct mdhim_rm_t *local_client_delete(struct mdhim_t *md, struct mdhim_delm_t *
 	work_item *item;
 
 	if ((item = malloc(sizeof(work_item))) == NULL) {
-		mlog(MDHIM_CLIENT_CRIT, "Error while allocating memory for client");
+		//mlog(MDHIM_CLIENT_CRIT, "Error while allocating memory for client");
 		return NULL;
 	}
 
 	item->message = (void *)dm;
 	item->source = md->mdhim_rank;
 	if ((ret = range_server_add_work(md, item)) != MDHIM_SUCCESS) {
-		mlog(MDHIM_CLIENT_CRIT, "Error adding work to range server in local_client_put");
+		//mlog(MDHIM_CLIENT_CRIT, "Error adding work to range server in local_client_put");
 		return NULL;
 	}
 	
@@ -261,14 +261,14 @@ struct mdhim_rm_t *local_client_bdelete(struct mdhim_t *md, struct mdhim_bdelm_t
 	work_item *item;
 
 	if ((item = malloc(sizeof(work_item))) == NULL) {
-		mlog(MDHIM_CLIENT_CRIT, "Error while allocating memory for client");
+		//mlog(MDHIM_CLIENT_CRIT, "Error while allocating memory for client");
 		return NULL;
 	}
 
 	item->message = (void *)bdm;
 	item->source = md->mdhim_rank;
 	if ((ret = range_server_add_work(md, item)) != MDHIM_SUCCESS) {
-		mlog(MDHIM_CLIENT_CRIT, "Error adding work to range server in local_client_put");
+		//mlog(MDHIM_CLIENT_CRIT, "Error adding work to range server in local_client_put");
 		return NULL;
 	}
 	
@@ -289,14 +289,14 @@ void local_client_close(struct mdhim_t *md, struct mdhim_basem_t *cm) {
 	work_item *item;
 
 	if ((item = malloc(sizeof(work_item))) == NULL) {
-		mlog(MDHIM_CLIENT_CRIT, "Error while allocating memory for client");
+		//mlog(MDHIM_CLIENT_CRIT, "Error while allocating memory for client");
 		return;
 	}
 
 	item->message = (void *)cm;
 	item->source = md->mdhim_rank;
 	if ((ret = range_server_add_work(md, item)) != MDHIM_SUCCESS) {
-		mlog(MDHIM_CLIENT_CRIT, "Error adding work to range server in local_client_put");
+		//mlog(MDHIM_CLIENT_CRIT, "Error adding work to range server in local_client_put");
 		return;
 	}
 	

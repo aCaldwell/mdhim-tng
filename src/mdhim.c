@@ -5,6 +5,7 @@
  */
 
 #include <stdlib.h>
+#include <unistd.h>
 #include "mdhim.h"
 #include "range_server.h"
 #include "client.h"
@@ -40,7 +41,7 @@ struct mdhim_t *mdhimInit(void *appComm, struct mdhim_options_t *opts) {
 
 	//Open mlog - stolen from plfs
 	ret = mlog_open((char *)"mdhim", 0,
-			opts->debug_level, opts->debug_level, NULL, 0, MLOG_LOGPID, 0);
+	    	opts->debug_level, opts->debug_level, (char *)"tstOUT.log", 0, MLOG_LOGPID, 0);
 
 	//Allocate memory for the main MDHIM structure
 	md = malloc(sizeof(struct mdhim_t));
@@ -154,7 +155,7 @@ int mdhimClose(struct mdhim_t *md) {
 	int ret;
 	struct rangesrv_info *rsrv, *trsrv;
 	struct mdhim_stat *stat, *tmp;
-
+   
 	MPI_Barrier(md->mdhim_client_comm);
 	//Stop range server if I'm a range server	
 	if (im_range_server(md) && (ret = range_server_stop(md)) != MDHIM_SUCCESS) {
@@ -196,13 +197,13 @@ int mdhimClose(struct mdhim_t *md) {
 		free(stat);
 	}
 
-    MPI_Barrier(md->mdhim_client_comm);
+        MPI_Barrier(md->mdhim_client_comm);
 	MPI_Comm_free(&md->mdhim_client_comm);
 	MPI_Comm_free(&md->mdhim_comm);
-    free(md);
+        free(md);
 
-	//Close MLog
-	mlog_close();
+	//Close //mlog
+	//mlog_close();
 
 	return MDHIM_SUCCESS;
 }
@@ -227,9 +228,9 @@ int mdhimCommit(struct mdhim_t *md) {
 		rm = local_client_commit(md, cm);
 		if (!rm || rm->error) {
 			ret = MDHIM_ERROR;
-			mlog(MDHIM_SERVER_CRIT, "MDHIM Rank: %d - " 
-			     "Error while committing database in mdhimCommit",
-			     md->mdhim_rank);
+			//mlog(MDHIM_SERVER_CRIT, "MDHIM Rank: %d - " 
+			  //   "Error while committing database in mdhimCommit",
+			   //  md->mdhim_rank);
 		}
 
 		if (rm) {
@@ -261,17 +262,17 @@ struct mdhim_rm_t *mdhimPut(struct mdhim_t *md, void *key, int key_len,
 
 	//Get the range server this key will be sent to
 	if ((ri = get_range_server(md, key, key_len)) == NULL) {
-		mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
-		     "Error while determining range server in mdhimPut", 
-		     md->mdhim_rank);
+		//mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
+		  //   "Error while determining range server in mdhimPut", 
+		   //  md->mdhim_rank);
 		return NULL;
 	}
 	
 	pm = malloc(sizeof(struct mdhim_putm_t));
 	if (!pm) {
-		mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
-		     "Error while allocating memory in mdhimPut", 
-		     md->mdhim_rank);
+		//mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
+		  //   "Error while allocating memory in mdhimPut", 
+		   //  md->mdhim_rank);
 		return NULL;
 	}
 
@@ -320,9 +321,9 @@ struct mdhim_brm_t *mdhimBPut(struct mdhim_t *md, void **keys, int *key_lens,
 
 	//Check to see that we were given a sane amount of records
 	if (num_records > MAX_BULK_OPS) {
-		mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
-		     "To many bulk operations requested in mdhimBGetOp", 
-		     md->mdhim_rank);
+		//mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
+		  //   "To many bulk operations requested in mdhimBGetOp", 
+		   //  md->mdhim_rank);
 		return NULL;
 	}
 
@@ -342,9 +343,9 @@ struct mdhim_brm_t *mdhimBPut(struct mdhim_t *md, void **keys, int *key_lens,
 		//Get the range server this key will be sent to
 		if ((ri = get_range_server(md, keys[i], key_lens[i])) == 
 		    NULL) {
-			mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
-			     "Error while determining range server in mdhimBput", 
-			     md->mdhim_rank);
+			//mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
+			  //   "Error while determining range server in mdhimBput", 
+			   //  md->mdhim_rank);
 			continue;
 		}
        
@@ -503,9 +504,9 @@ struct mdhim_bgetrm_t *mdhimBGet(struct mdhim_t *md, void **keys, int *key_lens,
 
 	//Check to see that we were given a sane amount of records
 	if (num_records > MAX_BULK_OPS) {
-		mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
-		     "Too many bulk operations requested in mdhimBGet", 
-		     md->mdhim_rank);
+		//mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
+		  //   "Too many bulk operations requested in mdhimBGet", 
+		   //  md->mdhim_rank);
 		return NULL;
 	}
 
@@ -525,9 +526,9 @@ struct mdhim_bgetrm_t *mdhimBGet(struct mdhim_t *md, void **keys, int *key_lens,
 		//Get the range server this key will be sent to
 		if ((ri = get_range_server(md, keys[i], key_lens[i])) == 
 		    NULL) {
-			mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
-			     "Error while determining range server in mdhimBget", 
-			     md->mdhim_rank);
+			//mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
+			  //   "Error while determining range server in mdhimBget", 
+			   //  md->mdhim_rank);
 			continue;
 		}
        
@@ -613,25 +614,25 @@ struct mdhim_bgetrm_t *mdhimBGetOp(struct mdhim_t *md, void *key, int key_len,
 	rangesrv_info *ri = NULL;
 
 	if (op == MDHIM_GET_EQ) {
-		mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
-		     "Invalid operation for mdhimBGetOp", 
-		     md->mdhim_rank);
+		//mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
+		  //   "Invalid operation for mdhimBGetOp", 
+		   //  md->mdhim_rank);
 		return NULL;
 	}
 
 	if (num_records > MAX_BULK_OPS) {
-		mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
-		     "To many bulk operations requested in mdhimBGetOp", 
-		     md->mdhim_rank);
+		//mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
+		  //   "To many bulk operations requested in mdhimBGetOp", 
+		   //  md->mdhim_rank);
 		return NULL;
 	}
 
 	//Get the range server this key will be sent to
 	ri = get_range_server_from_stats(md, key, key_len, op);
 	if (!ri) {
-		mlog(MDHIM_CLIENT_INFO, "MDHIM Rank: %d - " 
-		     "Key: %d not available based on current stats information.", 
-		     md->mdhim_rank, *(int *) key);
+		//mlog(MDHIM_CLIENT_INFO, "MDHIM Rank: %d - " 
+		  //   "Key: %d not available based on current stats information.", 
+		   //  md->mdhim_rank, *(int *) key);
 		bgrm = malloc(sizeof(struct mdhim_bgetrm_t));
 		memset(bgrm, 0, sizeof(struct mdhim_bgetrm_t));
 		return bgrm;
@@ -639,9 +640,9 @@ struct mdhim_bgetrm_t *mdhimBGetOp(struct mdhim_t *md, void *key, int key_len,
 
 	gm = malloc(sizeof(struct mdhim_getm_t));
 	if (!gm) {
-		mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
-		     "Error while allocating memory in mdhimGet", 
-		     md->mdhim_rank);
+		//mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
+		  //   "Error while allocating memory in mdhimGet", 
+		   //  md->mdhim_rank);
 		return NULL;
 	}
 
@@ -685,17 +686,17 @@ struct mdhim_rm_t *mdhimDelete(struct mdhim_t *md, void *key, int key_len) {
 
 	//Get the range server this key will be sent to
 	if ((ri = get_range_server(md, key, key_len)) == NULL) {
-		mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
-		     "Error while determining range server in mdhimDel", 
-		     md->mdhim_rank);
+		//mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
+		  //   "Error while determining range server in mdhimDel", 
+		   //  md->mdhim_rank);
 		return NULL;
 	}
 
 	dm = malloc(sizeof(struct mdhim_delm_t));
 	if (!dm) {
-		mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
-		     "Error while allocating memory in mdhimDel", 
-		     md->mdhim_rank);
+		//mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
+		  //   "Error while allocating memory in mdhimDel", 
+		   //  md->mdhim_rank);
 		return NULL;
 	}
 
@@ -740,9 +741,9 @@ struct mdhim_brm_t *mdhimBDelete(struct mdhim_t *md, void **keys, int *key_lens,
 
 	//Check to see that we were given a sane amount of records
 	if (num_records > MAX_BULK_OPS) {
-		mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
-		     "To many bulk operations requested in mdhimBGetOp", 
-		     md->mdhim_rank);
+		//mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
+		  //   "To many bulk operations requested in mdhimBGetOp", 
+		   //  md->mdhim_rank);
 		return NULL;
 	}
 
@@ -762,9 +763,9 @@ struct mdhim_brm_t *mdhimBDelete(struct mdhim_t *md, void **keys, int *key_lens,
 		//Get the range server this key will be sent to
 		if ((ri = get_range_server(md, keys[i], key_lens[i])) == 
 		    NULL) {
-			mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
-			     "Error while determining range server in mdhimBdel", 
-			     md->mdhim_rank);
+			//mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
+			  //   "Error while determining range server in mdhimBdel", 
+			   //  md->mdhim_rank);
 			continue;
 		}
        
@@ -837,9 +838,9 @@ int mdhimStatFlush(struct mdhim_t *md) {
 
 	MPI_Barrier(md->mdhim_client_comm);	
 	if ((ret = get_stat_flush(md)) != MDHIM_SUCCESS) {
-		mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
-		     "Error while getting MDHIM stat data in mdhimStatFlush", 
-		     md->mdhim_rank);
+		//mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
+		//     "Error while getting MDHIM stat data in mdhimStatFlush", 
+		//     md->mdhim_rank);
 	}
 	MPI_Barrier(md->mdhim_client_comm);	
 

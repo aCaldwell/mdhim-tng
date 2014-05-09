@@ -214,8 +214,8 @@ int verify_key(void *key, int key_len, int key_type) {
 
 	size_check = ikey/mdhim_max_recs_per_slice;
 	if (size_check >= MDHIM_MAX_SLICES) {
-		mlog(MDHIM_CLIENT_CRIT, "Error - Not enough slices for this key." 
-		     "  Try increasing the slice size.");
+		//mlog(MDHIM_CLIENT_CRIT, "Error - Not enough slices for this key." 
+		  //   "  Try increasing the slice size.");
 		return MDHIM_ERROR;
 	}
 	
@@ -256,8 +256,8 @@ uint32_t get_num_range_servers(struct mdhim_t *md) {
 	int ret;
 
 	if ((ret = MPI_Comm_size(md->mdhim_comm, &size)) != MPI_SUCCESS) {
-		mlog(MPI_EMERG, "Rank: %d - Couldn't get the size of the comm in get_num_range_servers", 
-		     md->mdhim_rank);
+		//mlog(MPI_EMERG, "Rank: %d - Couldn't get the size of the comm in get_num_range_servers", 
+		  //   md->mdhim_rank);
 		return MDHIM_ERROR;
 	}
 
@@ -291,8 +291,8 @@ uint32_t is_range_server(struct mdhim_t *md, int rank) {
 	uint64_t rangesrv_num = 0;
 
 	if ((ret = MPI_Comm_size(md->mdhim_comm, &size)) != MPI_SUCCESS) {
-		mlog(MPI_EMERG, "Rank: %d - Couldn't get the size of the comm in is_range_server", 
-		     md->mdhim_rank);
+		//mlog(MPI_EMERG, "Rank: %d - Couldn't get the size of the comm in is_range_server", 
+		  //   md->mdhim_rank);
 		return MDHIM_ERROR;
 	}
 
@@ -354,8 +354,8 @@ int get_slice_num(struct mdhim_t *md, void *key, int key_len) {
 
 	//Make sure this key is valid
 	if ((ret = verify_key(key, key_len, key_type)) != MDHIM_SUCCESS) {
-		mlog(MDHIM_CLIENT_INFO, "Rank: %d - Invalid key given to get_range_server()", 
-		     md->mdhim_rank);
+		//mlog(MDHIM_CLIENT_INFO, "Rank: %d - Invalid key given to get_range_server()", 
+		  //   md->mdhim_rank);
 		return MDHIM_ERROR;
 	}
 
@@ -723,9 +723,9 @@ rangesrv_info *get_range_server_from_stats(struct mdhim_t *md, void *key, int ke
 	cur_slice = slice_num = 0;
 	//If we don't have any stats info, then return null
 	if (!md->stats) {
-		mlog(MDHIM_CLIENT_INFO, "Rank: %d - No statistics data available" 
-		     " to do a cursor based operation.  Perform a mdhimStatFlush first.", 
-		     md->mdhim_rank);
+		//mlog(MDHIM_CLIENT_INFO, "Rank: %d - No statistics data available" 
+		  //   " to do a cursor based operation.  Perform a mdhimStatFlush first.", 
+		   //  md->mdhim_rank);
 		return NULL;
 	}
 
@@ -735,8 +735,8 @@ rangesrv_info *get_range_server_from_stats(struct mdhim_t *md, void *key, int ke
 	if (key && key_len) {
 		cur_slice = get_slice_num(md, key, key_len);
 		if (cur_slice == MDHIM_ERROR) {
-			mlog(MDHIM_CLIENT_INFO, "Rank: %d - Error: could not determine a valid a slice number", 
-			     md->mdhim_rank);
+			//mlog(MDHIM_CLIENT_INFO, "Rank: %d - Error: could not determine a valid a slice number", 
+			  //   md->mdhim_rank);
 			return NULL;
 		}
 	} else if (op != MDHIM_GET_FIRST && op != MDHIM_GET_LAST) {
@@ -773,8 +773,8 @@ rangesrv_info *get_range_server_from_stats(struct mdhim_t *md, void *key, int ke
 
 	ret_rp = get_range_server_by_slice(md, slice_num);
 	if (!ret_rp) {
-		mlog(MDHIM_CLIENT_INFO, "Rank: %d - Did not get a valid range server from get_range_server_by_size", 
-		     md->mdhim_rank);
+		//mlog(MDHIM_CLIENT_INFO, "Rank: %d - Did not get a valid range server from get_range_server_by_size", 
+		  //   md->mdhim_rank);
 		return NULL;
 	}
        
