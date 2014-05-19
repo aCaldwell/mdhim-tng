@@ -31,6 +31,21 @@ extern "C"
 #define SECONDARY_GLOBAL_INFO 1
 #define SECONDARY_LOCAL_INFO 2
 
+typedef struct rangesrv_list RangeSrv_List;
+
+/*
+* function pointer to user defined
+* get_range_servers
+*/
+typedef RangeSrv_List *(*fptrGetRangeServers)(struct mdhim_t *, struct index_t *, void *, int);
+
+/*
+* function pointer to user defined
+* get_range_servers_from_stats
+*/
+typedef RangeSrv_List *(*fptrGetRangeServersFromStats)(struct mdhim_t *, struct index_t *,
+                                                        void *, int, int);
+
 /* 
  * mdhim data 
  * Contains client communicator
@@ -69,6 +84,11 @@ struct mdhim_t {
 	void *receive_msg;
         //Options for DB creation
         mdhim_options_t *db_opts;
+
+    // Pointers to get_range_server and get_range_server_from_stats
+    fptrGetRangeServers          get_range_servers;
+    fptrGetRangeServersFromStats get_range_servers_from_stats;
+        
 };
 
 struct secondary_info {
@@ -87,7 +107,9 @@ struct secondary_bulk_info {
 	int info_type;
 };
 
-struct mdhim_t *mdhimInit(void *appComm, struct mdhim_options_t *opts);
+struct mdhim_t *mdhimInit(void *appComm, struct mdhim_options_t *opts, 
+                        RangeSrv_List *(*fptrGetRangeServers)(struct mdhim_t *, struct index_t *, void *, int),
+                        RangeSrv_List *(*fptrGetRangeServersFromStats)(struct mdhim_t *, struct index_t *, void *, int, int));
 int mdhimClose(struct mdhim_t *md);
 int mdhimCommit(struct mdhim_t *md, struct index_t *index);
 int mdhimStatFlush(struct mdhim_t *md, struct index_t *index);
@@ -123,9 +145,6 @@ struct mdhim_brm_t *mdhimBDelete(struct mdhim_t *md, struct index_t *index,
 				 void **keys, int *key_lens,
 				 int num_keys);
 void mdhim_release_recv_msg(void *msg);
-#ifdef __cplusplus
-}
-#endif
 struct secondary_info *mdhimCreateSecondaryInfo(struct index_t *secondary_index,
 						void **secondary_keys, int *secondary_key_lens,
 						int num_keys, int info_type);
@@ -136,6 +155,9 @@ struct secondary_bulk_info *mdhimCreateSecondaryBulkInfo(struct index_t *seconda
 							 int **secondary_key_lens,
 							 int *num_keys, int info_type);
 void mdhimReleaseSecondaryBulkInfo(struct secondary_bulk_info *si);
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

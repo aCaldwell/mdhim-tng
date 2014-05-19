@@ -31,7 +31,9 @@
  * @param opts Options structure for DB creation, such as name, and primary key type
  * @return mdhim_t* that contains info about this instance or NULL if there was an error
  */
-struct mdhim_t *mdhimInit(void *appComm, struct mdhim_options_t *opts) {
+struct mdhim_t *mdhimInit(void *appComm, struct mdhim_options_t *opts,
+                          rangesrv_list *(*fptrget_range_servers)(struct mdhim_t *, struct index_t *, void *, int),
+                          rangesrv_list *(*fptrget_range_servers_from_stats)(struct mdhim_t *, struct index_t *, void *, int, int)) {
 	int ret;
 	struct mdhim_t *md;
 	struct index_t *primary_index;
@@ -121,7 +123,7 @@ struct mdhim_t *mdhimInit(void *appComm, struct mdhim_options_t *opts) {
 
 	//Create the default remote primary index
 	primary_index = create_global_index(md, opts->rserver_factor, opts->max_recs_per_slice, 
-					    opts->db_type, opts->db_key_type);
+					    opts->db_type, opts->db_key_type, "primary");
 	if (!primary_index) {
 		mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
 		     "Couldn't create the default index", 
@@ -129,6 +131,20 @@ struct mdhim_t *mdhimInit(void *appComm, struct mdhim_options_t *opts) {
 		return NULL;
 	}
 	md->primary_index = primary_index;
+
+    // If the user provided a function pointer to their own get_range_servers
+	if(!fptrget_range_servers) {
+        md->get_range_servers = get_range_servers;
+    }else{
+        md->get_range_servers = fptrget_range_servers;
+    }
+
+    // If the user provided a function pointer to their own get_range_servers_from_stats
+	if(!fptrget_range_servers) {
+        md->get_range_servers_from_stats = get_range_servers_from_stats;
+    }else{
+        md->get_range_servers_from_stats = fptrget_range_servers_from_stats;
+    }
 	
 	//Set the local receive queue to NULL - used for sending and receiving to/from ourselves
 	md->receive_msg = NULL;
