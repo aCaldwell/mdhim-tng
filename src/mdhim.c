@@ -371,9 +371,9 @@ struct mdhim_brm_t *_bput_secondary_keys_from_info(struct mdhim_t *md,
 	int i, j;
 	void **primary_keys_to_send;
 	int *primary_key_lens_to_send;
-	struct mdhim_brm_t *head, *new;
+	struct mdhim_brm_t *head, *addition;
 
-	head = new = NULL;
+	head = addition = NULL;
 	for (i = 0; i < num_records; i++) {
 		primary_keys_to_send = 
 			malloc(secondary_info->num_keys[i] * sizeof(void *));
@@ -385,15 +385,15 @@ struct mdhim_brm_t *_bput_secondary_keys_from_info(struct mdhim_t *md,
 			primary_key_lens_to_send[j] = primary_key_lens[i];
 		}
 		
-		new = _bput_records(md, secondary_info->secondary_index, 
+		addition = _bput_records(md, secondary_info->secondary_index, 
 				    secondary_info->secondary_keys[i], 
 				    secondary_info->secondary_key_lens[i], 
 				    primary_keys_to_send, primary_key_lens_to_send, 
 				    secondary_info->num_keys[i]);
 		if (!head) {
-			head = new;
-		} else if (new) {
-			_concat_brm(head, new);
+			head = addition;
+		} else if (addition) {
+			_concat_brm(head, addition);
 		}
 
 		free(primary_keys_to_send);
@@ -420,9 +420,9 @@ struct mdhim_brm_t *mdhimBPut(struct mdhim_t *md,
 			      int num_records,
 			      struct secondary_bulk_info *secondary_global_info,
 			      struct secondary_bulk_info *secondary_local_info) {
-	struct mdhim_brm_t *head, *new;
+	struct mdhim_brm_t *head, *addition;
 
-	head = new = NULL;
+	head = addition = NULL;
 	if (!primary_keys || !primary_key_lens ||
 	    !primary_values || !primary_value_lens) {
 		return NULL;
@@ -438,10 +438,10 @@ struct mdhim_brm_t *mdhimBPut(struct mdhim_t *md,
 	if (secondary_local_info && secondary_local_info->secondary_index && 
 	    secondary_local_info->secondary_keys && 
 	    secondary_local_info->secondary_key_lens) {
-		new = _bput_secondary_keys_from_info(md, secondary_local_info, primary_keys, 
+		addition = _bput_secondary_keys_from_info(md, secondary_local_info, primary_keys, 
 						     primary_key_lens, num_records);
-		if (new) {
-			_concat_brm(head, new);
+		if (addition) {
+			_concat_brm(head, addition);
 		}	       
 	}
 	
@@ -449,10 +449,10 @@ struct mdhim_brm_t *mdhimBPut(struct mdhim_t *md,
 	if (secondary_global_info && secondary_global_info->secondary_index && 
 	    secondary_global_info->secondary_keys && 
 	    secondary_global_info->secondary_key_lens) {
-		new = _bput_secondary_keys_from_info(md, secondary_global_info, primary_keys, 
+		addition = _bput_secondary_keys_from_info(md, secondary_global_info, primary_keys, 
 						     primary_key_lens, num_records);
-		if (new) {
-			_concat_brm(head, new);
+		if (addition) {
+			_concat_brm(head, addition);
 		}	     
 	}	
 
@@ -475,9 +475,9 @@ struct mdhim_brm_t *mdhimBPutSecondary(struct mdhim_t *md, struct index_t *secon
 				       void **secondary_keys, int *secondary_key_lens, 
 				       void **primary_keys, int *primary_key_lens, 
 				       int num_records) {
-	struct mdhim_brm_t *head, *new;
+	struct mdhim_brm_t *head, *addition;
 
-	head = new = NULL;
+	head = addition = NULL;
 	if (!secondary_keys || !secondary_key_lens || 
 	    !primary_keys || !primary_key_lens) {
 		return NULL;
