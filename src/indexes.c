@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <errno.h>
+#include <ctype.h>
 #include "mdhim.h"
 #include "indexes.h"
 
@@ -500,9 +501,11 @@ uint32_t get_num_range_servers(struct mdhim_t *md, struct index_t *rindex) {
  * @return     MDHIM_ERROR on error, otherwise the index identifier
  */
 struct index_t *create_local_index(struct mdhim_t *md, int db_type, int key_type, char index_name[]) {
-	struct index_t *li, *check;
+	struct index_t *li, *check = NULL;
 	uint32_t rangesrv_num;
 	int ret;
+	size_t name_len = strlen(index_name);
+	char lower_name[name_len];
 
 	MPI_Barrier(md->mdhim_comm);
 
@@ -536,12 +539,16 @@ struct index_t *create_local_index(struct mdhim_t *md, int db_type, int key_type
 	li->primary_id = md->primary_index->id;
 	li->stats = NULL;
 	// Check to see if the name passed in has already been taken
-	check = NULL;
 	HASH_FIND_STR(md->indexes, index_name, check);
 	if(check) {
         goto done;
     }
-    li->name = tolower(index_name);
+    
+    int i;
+    for(i=0; i<name_len; i++){
+        lower_name[i] = tolower(index_name[i]);
+    }
+    li->name = lower_name;
 	
 
 	//Figure out how many range servers we could have based on the range server factor
@@ -631,9 +638,11 @@ done:
 struct index_t *create_global_index(struct mdhim_t *md, int server_factor, 
 				    int max_recs_per_slice, 
 				    int db_type, int key_type, char index_name[]) {
-	struct index_t *gi, *check;
+	struct index_t *gi, *check = NULL;
 	uint32_t rangesrv_num;
 	int ret;
+	size_t name_len = strlen(index_name);
+	char lower_name[name_len];
 
 	MPI_Barrier(md->mdhim_comm);
 
@@ -667,12 +676,15 @@ struct index_t *create_global_index(struct mdhim_t *md, int server_factor,
 	gi->primary_id = gi->type == SECONDARY_INDEX ? md->primary_index->id : -1;
 	gi->stats = NULL;
 	// Check to see if the name passed in has already been taken
-	check = NULL;
 	HASH_FIND_STR(md->indexes, index_name, check);
 	if(check) {
         goto done;
     }
-    gi->name = gi->id > 0 ? tolower(index_name) : "primary";
+    int i;
+    for(i=0; i<name_len; i++) {
+        lower_name[i] = tolower(index_name[i]);
+    }
+    gi->name = gi->id > 0 ? lower_name : "primary";
 
 	//Figure out how many range servers we could have based on the range server factor
 	gi->num_rangesrvs = get_num_range_servers(md, gi);		
