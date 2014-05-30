@@ -208,8 +208,8 @@ int verify_key(struct index_t *index, void *key,
 
 	size_check = ikey/index->mdhim_max_recs_per_slice;
 	if (size_check >= MDHIM_MAX_SLICES) {
-		//mlog(MDHIM_CLIENT_CRIT, "Error - Not enough slices for this key." 
-		  //   "  Try increasing the slice size.");
+		mlog(MDHIM_CLIENT_CRIT, "Error - Not enough slices for this key." 
+		     "  Try increasing the slice size.");
 		return MDHIM_ERROR;
 	}
 	
@@ -829,7 +829,7 @@ rangesrv_list *get_range_servers_from_stats(struct mdhim_t *md, struct index_t *
 	//If we don't have any stats info, then return null	
 	if (!index->stats) {
 		mlog(MDHIM_CLIENT_CRIT, "Rank: %d - No statistics data available." 
-		     "Perform a mdhimStatFlush first.", 
+		     " Perform a mdhimStatFlush first.", 
 		     md->mdhim_rank);
 		return NULL;
 	}

@@ -52,7 +52,8 @@ struct rangesrv_list {
 	rangesrv_list *next;
 };
 
-int max_rangesrvs;
+/*  XXX - Is this variable even used in any of the code - AC */
+//int max_rangesrvs;
 void partitioner_init();
 void partitioner_release();
 rangesrv_list *get_range_servers(struct mdhim_t *md, struct index_t *index,

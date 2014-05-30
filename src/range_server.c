@@ -171,8 +171,8 @@ int range_server_stop(struct mdhim_t *md) {
 	for (i = 0; i < md->db_opts->num_wthreads; i++) {
 		if ((ret = pthread_cancel(*md->mdhim_rs->workers[i])) != 0) {
 		    printf("Rank: %d - pthread_cancel on worker %d is %d/n",md->mdhim_rank, i, ret);
-			//mlog(MDHIM_SERVER_DBG, "Rank: %d - Error canceling worker thread", 
-			  //   md->mdhim_rank);
+			mlog(MDHIM_SERVER_DBG, "Rank: %d - Error canceling worker thread", 
+			     md->mdhim_rank);
 		}
 	}
 	
@@ -185,15 +185,15 @@ int range_server_stop(struct mdhim_t *md) {
 
 	//Destroy the condition variables
 	if ((ret = pthread_cond_destroy(md->mdhim_rs->work_ready_cv)) != 0) {
-		//mlog(MDHIM_SERVER_DBG, "Rank: %d - Error destroying work cond variable", 
-		  //   md->mdhim_rank);
+		mlog(MDHIM_SERVER_DBG, "Rank: %d - Error destroying work cond variable", 
+		     md->mdhim_rank);
 	}
 	free(md->mdhim_rs->work_ready_cv);
 
 	//Destroy the mutex
 	if ((ret = pthread_mutex_destroy(md->mdhim_rs->work_queue_mutex)) != 0) {
-		//mlog(MDHIM_SERVER_DBG, "Rank: %d - Error destroying work queue mutex", 
-		  //   md->mdhim_rank);
+		mlog(MDHIM_SERVER_DBG, "Rank: %d - Error destroying work queue mutex", 
+		     md->mdhim_rank);
 	}
 	free(md->mdhim_rs->work_queue_mutex);
 
@@ -607,8 +607,8 @@ int range_server_commit(struct mdhim_t *md, struct mdhim_basem_t *im, int source
 	if ((ret = 
 	     index->mdhim_store->commit(index->mdhim_store->db_handle)) 
 	    != MDHIM_SUCCESS) {
-		//mlog(MDHIM_SERVER_CRIT, "Rank: %d - Error committing database", 
-		  //   md->mdhim_rank);	
+		mlog(MDHIM_SERVER_CRIT, "Rank: %d - Error committing database", 
+		     md->mdhim_rank);	
 	}
 
  done:	
@@ -993,11 +993,11 @@ respond:
  * Function for the thread that listens for new messages
  */
 void *listener_thread(void *data) {	
-	////mlog statements could cause a deadlock on range_server_stop due to canceling of threads
+	//mlog statements could cause a deadlock on range_server_stop due to canceling of threads
 	
 
 	struct mdhim_t *md = (struct mdhim_t *) data;
-   // printf("Rank: %d - Entered %s \n", md->mdhim_rank, __FUNCTION__);
+    printf("Rank: %d - Entered %s \n", md->mdhim_rank, __FUNCTION__);
 	void *message;
 	int source; //The source of the message
 	int ret;
@@ -1021,8 +1021,8 @@ void *listener_thread(void *data) {
 			continue;
 		}
 
-//		printf("Rank: %d - Received message from rank: %d of type: %d", 
-//		     md->mdhim_rank, source, mtype);
+		//printf("Rank: %d - Received message from rank: %d of type: %d", 
+		//     md->mdhim_rank, source, mtype);
 
         //Create a new work item
 		item = malloc(sizeof(work_item));
@@ -1045,7 +1045,7 @@ void *listener_thread(void *data) {
  * Function for the thread that processes work in work queue
  */
 void *worker_thread(void *data) {
-	////mlog statements could cause a deadlock on range_server_stop due to canceling of threads
+	//mlog statements could cause a deadlock on range_server_stop due to canceling of threads
 
 	struct mdhim_t *md = (struct mdhim_t *) data;
     printf("Rank: %d - entered %s\n", md->mdhim_rank, __FUNCTION__);    
@@ -1224,9 +1224,9 @@ int range_server_init(struct mdhim_t *md) {
 	//Allocate memory for the mdhim_rs_t struct
 	md->mdhim_rs = malloc(sizeof(struct mdhim_rs_t));
 	if (!md->mdhim_rs) {
-		//mlog(MDHIM_SERVER_CRIT, "MDHIM Rank: %d - " 
-		  //   "Error while allocating memory for range server", 
-		   //  md->mdhim_rank);
+		mlog(MDHIM_SERVER_CRIT, "MDHIM Rank: %d - " 
+		     "Error while allocating memory for range server", 
+		     md->mdhim_rank);
 		return MDHIM_ERROR;
 	}
 
@@ -1246,29 +1246,29 @@ int range_server_init(struct mdhim_t *md) {
 	//Initialize work queue mutex
 	md->mdhim_rs->work_queue_mutex = malloc(sizeof(pthread_mutex_t));
 	if (!md->mdhim_rs->work_queue_mutex) {
-		//mlog(MDHIM_SERVER_CRIT, "MDHIM Rank: %d - " 
-		  //   "Error while allocating memory for range server", 
-		   //  md->mdhim_rank);
+		mlog(MDHIM_SERVER_CRIT, "MDHIM Rank: %d - " 
+		     "Error while allocating memory for range server", 
+		     md->mdhim_rank);
 		return MDHIM_ERROR;
 	}
 	if ((ret = pthread_mutex_init(md->mdhim_rs->work_queue_mutex, NULL)) != 0) {    
-		//mlog(MDHIM_SERVER_CRIT, "MDHIM Rank: %d - " 
-		  //   "Error while initializing work queue mutex", md->mdhim_rank);
+		mlog(MDHIM_SERVER_CRIT, "MDHIM Rank: %d - " 
+		     "Error while initializing work queue mutex", md->mdhim_rank);
 		return MDHIM_ERROR;
 	}
 
 	//Initialize the condition variables
 	md->mdhim_rs->work_ready_cv = malloc(sizeof(pthread_cond_t));
 	if (!md->mdhim_rs->work_ready_cv) {
-		//mlog(MDHIM_SERVER_CRIT, "MDHIM Rank: %d - " 
-		  //   "Error while allocating memory for range server", 
-		   //  md->mdhim_rank);
+		mlog(MDHIM_SERVER_CRIT, "MDHIM Rank: %d - " 
+		     "Error while allocating memory for range server", 
+		     md->mdhim_rank);
 		return MDHIM_ERROR;
 	}
 	if ((ret = pthread_cond_init(md->mdhim_rs->work_ready_cv, NULL)) != 0) {
-		//mlog(MDHIM_SERVER_CRIT, "MDHIM Rank: %d - " 
-		  //   "Error while initializing condition variable", 
-		   //  md->mdhim_rank);
+		mlog(MDHIM_SERVER_CRIT, "MDHIM Rank: %d - " 
+		     "Error while initializing condition variable", 
+		     md->mdhim_rank);
 		return MDHIM_ERROR;
 	}
 	
@@ -1278,9 +1278,9 @@ int range_server_init(struct mdhim_t *md) {
 		md->mdhim_rs->workers[i] = malloc(sizeof(pthread_t));
 		if ((ret = pthread_create(md->mdhim_rs->workers[i], NULL, 
 					  worker_thread, (void *) md)) != 0) {    
-			//mlog(MDHIM_SERVER_CRIT, "MDHIM Rank: %d - " 
-			  //   "Error while initializing worker thread", 
-			   //  md->mdhim_rank);
+			mlog(MDHIM_SERVER_CRIT, "MDHIM Rank: %d - " 
+			     "Error while initializing worker thread", 
+			     md->mdhim_rank);
 			return MDHIM_ERROR;
 		}
 	}
@@ -1288,9 +1288,9 @@ int range_server_init(struct mdhim_t *md) {
 	//Initialize listener threads
 	if ((ret = pthread_create(&md->mdhim_rs->listener, NULL, 
 				  listener_thread, (void *) md)) != 0) {
-	  //mlog(MDHIM_SERVER_CRIT, "MDHIM Rank: %d - " 
-	    //   "Error while initializing listener thread", 
-	     //  md->mdhim_rank);
+	  mlog(MDHIM_SERVER_CRIT, "MDHIM Rank: %d - " 
+	       "Error while initializing listener thread", 
+	       md->mdhim_rank);
 	  return MDHIM_ERROR;
 	}
 

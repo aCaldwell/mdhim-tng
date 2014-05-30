@@ -243,7 +243,7 @@ int mdhim_leveldb_open(void **dbh, void **dbs, char *path, int flags, int key_ty
 	leveldb_options_set_comparator(mdhimdb->options, mdhimdb->cmp);
 	//Check to see if the given path + "_stat" and the null char will be more than the max
 	if (strlen(path) + 6 > PATH_MAX) {
-		//mlog(MDHIM_SERVER_CRIT, "Error opening leveldb database - path provided is too long");
+		mlog(MDHIM_SERVER_CRIT, "Error opening leveldb database - path provided is too long");
 		return MDHIM_DB_ERROR;
 	}
 
@@ -253,7 +253,7 @@ int mdhim_leveldb_open(void **dbh, void **dbs, char *path, int flags, int key_ty
 	//Set the output handle
 	*((struct mdhim_leveldb_t **) dbh) = mdhimdb;
 	if (err != NULL) {
-		//mlog(MDHIM_SERVER_CRIT, "Error opening leveldb database");
+		mlog(MDHIM_SERVER_CRIT, "Error opening leveldb database");
 		return MDHIM_DB_ERROR;
 	}
 
@@ -267,7 +267,7 @@ int mdhim_leveldb_open(void **dbh, void **dbs, char *path, int flags, int key_ty
 	*((struct mdhim_leveldb_t **) dbs) = statsdb;
 
 	if (err != NULL) {
-		//mlog(MDHIM_SERVER_CRIT, "Error opening leveldb database");
+		mlog(MDHIM_SERVER_CRIT, "Error opening leveldb database");
 		return MDHIM_DB_ERROR;
 	}
 
@@ -297,13 +297,13 @@ int mdhim_leveldb_put(void *dbh, void *key, int key_len, void *data, int32_t dat
     options = mdhimdb->write_options;    	    
     leveldb_put(mdhimdb->db, options, key, key_len, data, data_len, &err);
     if (err != NULL) {
-	    //mlog(MDHIM_SERVER_CRIT, "Error putting key/value in leveldb");
+	    mlog(MDHIM_SERVER_CRIT, "Error putting key/value in leveldb");
 	    return MDHIM_DB_ERROR;
     }
 
     gettimeofday(&end, NULL);
-    //mlog(MDHIM_SERVER_DBG, "Took: %d seconds to put the record", 
-	 //(int) (end.tv_sec - start.tv_sec));
+    mlog(MDHIM_SERVER_DBG, "Took: %d seconds to put the record", 
+	 (int) (end.tv_sec - start.tv_sec));
 
     return MDHIM_SUCCESS;
 }
@@ -342,13 +342,13 @@ int mdhim_leveldb_batch_put(void *dbh, void **keys, int32_t *key_lens,
 	leveldb_write(mdhimdb->db, options, write_batch, &err);
 	leveldb_writebatch_destroy(write_batch);
 	if (err != NULL) {
-		//mlog(MDHIM_SERVER_CRIT, "Error in batch put in leveldb");
+		mlog(MDHIM_SERVER_CRIT, "Error in batch put in leveldb");
 		return MDHIM_DB_ERROR;
 	}
 	
 	gettimeofday(&end, NULL);
-	//mlog(MDHIM_SERVER_DBG, "Took: %d seconds to put %d records", 
-	  //   (int) (end.tv_sec - start.tv_sec), num_records);
+	mlog(MDHIM_SERVER_DBG, "Took: %d seconds to put %d records", 
+	     (int) (end.tv_sec - start.tv_sec), num_records);
 	
 	return MDHIM_SUCCESS;
 }
@@ -378,7 +378,7 @@ int mdhim_leveldb_get(void *dbh, void *key, int key_len, void **data, int32_t *d
 	*data = NULL;
 	ldb_data = leveldb_get(mdhimdb->db, options, key, key_len, &ldb_data_len, &err);
 	if (err != NULL) {
-		//mlog(MDHIM_SERVER_CRIT, "Error getting value in leveldb");
+		mlog(MDHIM_SERVER_CRIT, "Error getting value in leveldb");
 		return MDHIM_DB_ERROR;
 	}
 
@@ -485,8 +485,8 @@ int mdhim_leveldb_get_next(void *dbh, void **key, int *key_len,
         //Destroy iterator
 	leveldb_iter_destroy(iter);      
 	gettimeofday(&end, NULL);
-	//mlog(MDHIM_SERVER_DBG, "Took: %d seconds to get the next record", 
-	  //   (int) (end.tv_sec - start.tv_sec));
+	mlog(MDHIM_SERVER_DBG, "Took: %d seconds to get the next record", 
+	     (int) (end.tv_sec - start.tv_sec));
 	return ret;
 
 error:	
@@ -589,8 +589,8 @@ int mdhim_leveldb_get_prev(void *dbh, void **key, int *key_len,
         //Destroy iterator
 	leveldb_iter_destroy(iter);      
 	gettimeofday(&end, NULL);
-	//mlog(MDHIM_SERVER_DBG, "Took: %d seconds to get the previous record", 
-	  //   (int) (end.tv_sec - start.tv_sec));
+	mlog(MDHIM_SERVER_DBG, "Took: %d seconds to get the previous record", 
+	     (int) (end.tv_sec - start.tv_sec));
 	return ret;
 
 error:	
@@ -655,7 +655,7 @@ int mdhim_leveldb_del(void *dbh, void *key, int key_len) {
 	options = mdhimdb->write_options;
 	leveldb_delete(mdhimdb->db, options, key, key_len, &err);
 	if (err != NULL) {
-		//mlog(MDHIM_SERVER_CRIT, "Error deleting key in leveldb");
+		mlog(MDHIM_SERVER_CRIT, "Error deleting key in leveldb");
 		return MDHIM_DB_ERROR;
 	}
  

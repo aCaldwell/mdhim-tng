@@ -180,8 +180,8 @@ int mdhimClose(struct mdhim_t *md) {
 	MPI_Comm_free(&md->mdhim_comm);
         free(md);
 
-	//Close //mlog
-	//mlog_close();
+	//Close mlog
+	mlog_close();
 
 	return MDHIM_SUCCESS;
 }
@@ -207,9 +207,9 @@ int mdhimCommit(struct mdhim_t *md, struct index_t *index) {
 		rm = local_client_commit(md, cm);
 		if (!rm || rm->error) {
 			ret = MDHIM_ERROR;
-			//mlog(MDHIM_SERVER_CRIT, "MDHIM Rank: %d - " 
-			  //   "Error while committing database in mdhimCommit",
-			   //  md->mdhim_rank);
+			mlog(MDHIM_SERVER_CRIT, "MDHIM Rank: %d - " 
+			     "Error while committing database in mdhimCommit",
+			     md->mdhim_rank);
 		}
 
 		if (rm) {
@@ -668,9 +668,9 @@ struct mdhim_bgetrm_t *mdhimBGetOp(struct mdhim_t *md, struct index_t *index,
 	struct mdhim_bgetrm_t *bgrm_head;
 
 	if (num_records > MAX_BULK_OPS) {
-		//mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
-		  //   "To many bulk operations requested in mdhimBGetOp", 
-		   //  md->mdhim_rank);
+		mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
+		     "To many bulk operations requested in mdhimBGetOp", 
+		     md->mdhim_rank);
 		return NULL;
 	}
 
@@ -740,9 +740,9 @@ struct mdhim_brm_t *mdhimBDelete(struct mdhim_t *md, struct index_t *index,
 
 	//Check to see that we were given a sane amount of records
 	if (num_records > MAX_BULK_OPS) {
-		//mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
-		  //   "To many bulk operations requested in mdhimBGetOp", 
-		   //  md->mdhim_rank);
+		mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
+		     "To many bulk operations requested in mdhimBGetOp", 
+		     md->mdhim_rank);
 		return NULL;
 	}
 

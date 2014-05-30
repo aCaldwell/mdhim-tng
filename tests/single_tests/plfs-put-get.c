@@ -8,6 +8,7 @@
 #define SLICE_SIZE 1
 
 struct plfs_record {
+    unsigned int chunk_id;
 	unsigned long long int logical_offset;
 	unsigned long long int size;
 	char dropping_file[PATH_MAX];
@@ -16,16 +17,16 @@ struct plfs_record {
 
 FILE *open_output(int rank) {
 	FILE *file;
-	char rank_str[4];
-	char file_str[4];
-        char char_str[2];	
+	char rank_str[3];
+	char file_str[3];
+        char char_str[3];	
 	int i, j;
 	char filename[PATH_MAX];
 
 	//Opens the file and coverts the rank to characters
 	sprintf(rank_str, "%d", rank);
-	memset(file_str, 0, 4);
-	memset(file_str, 'a', 3);
+	memset(file_str, 0, 3);
+	memset(file_str, 'a', 2);
 	j = strlen(file_str) - 1;
 	for (i = strlen(rank_str)-1; i >= 0; i--) {
 		sprintf(char_str, "%c", rank_str[i]);
@@ -33,7 +34,7 @@ FILE *open_output(int rank) {
 		j--;
 	}
 
-	sprintf(filename, "plfs-output/plfs%s", file_str);
+	sprintf(filename, "simple_out/plfs%s", file_str);
 	printf("file string is: %s\n", filename);
 	file = fopen(filename, "r");
 	if (!file) {
@@ -48,7 +49,7 @@ struct plfs_record *parse_input(FILE *file) {
 	int ret;
 
 	rec = malloc(sizeof(struct plfs_record));
-	ret = fscanf(file, "%llu %llu %s %llu", &rec->logical_offset, &rec->size, 
+	ret = fscanf(file, "%d %llu %llu %s %llu", &rec->chunk_id, &rec->logical_offset, &rec->size, 
 		     rec->dropping_file, &rec->physical_offset);
 	if (!ret || ret == EOF) {
 		printf("Error parsing file\n");
@@ -145,7 +146,8 @@ int main(int argc, char **argv) {
 	if (!bgrm || bgrm->error) {
 		printf("Error getting value for key: %llu from MDHIM\n", key);
 	} else if (bgrm->value_lens[0]) {
-		printf("Successfully got value: %d from MDHIM\n", *((int *) bgrm->values[0]));
+	    struct plfs_record *ptr = (struct plfs_record *)bgrm->values[0];
+		printf("Successfully got value: %llu from MDHIM\n", ptr->logical_offset);
 	}
 
 	mdhim_full_release_msg(bgrm);
