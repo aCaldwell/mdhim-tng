@@ -156,7 +156,6 @@ work_item *get_work(struct mdhim_t *md) {
  * @return    MDHIM_SUCCESS or MDHIM_ERROR on error
  */
 int range_server_stop(struct mdhim_t *md) {
-   // printf("Rank: %d - Entered %s\n", md->mdhim_rank, __FUNCTION__);
 	work_item *head, *temp_item;
 	int ret;	
 	int i;
@@ -170,7 +169,6 @@ int range_server_stop(struct mdhim_t *md) {
 	//Cancel the worker threads
 	for (i = 0; i < md->db_opts->num_wthreads; i++) {
 		if ((ret = pthread_cancel(*md->mdhim_rs->workers[i])) != 0) {
-		    printf("Rank: %d - pthread_cancel on worker %d is %d/n",md->mdhim_rank, i, ret);
 			mlog(MDHIM_SERVER_DBG, "Rank: %d - Error canceling worker thread", 
 			     md->mdhim_rank);
 		}
@@ -181,7 +179,6 @@ int range_server_stop(struct mdhim_t *md) {
 	for (i = 0; i < md->db_opts->num_wthreads; i++) {
 		pthread_join(*md->mdhim_rs->workers[i], NULL);
 	}
-    printf("Rank: %d - finished joining all threads\n", md->mdhim_rank);
 
 	//Destroy the condition variables
 	if ((ret = pthread_cond_destroy(md->mdhim_rs->work_ready_cv)) != 0) {
@@ -215,7 +212,6 @@ int range_server_stop(struct mdhim_t *md) {
 	free(md->mdhim_rs);
 	md->mdhim_rs = NULL;
 	
-	//free(md);
 	return MDHIM_SUCCESS;
 }
 
@@ -993,11 +989,10 @@ respond:
  * Function for the thread that listens for new messages
  */
 void *listener_thread(void *data) {	
-	//mlog statements could cause a deadlock on range_server_stop due to canceling of threads
+	//Mlog statements could cause a deadlock on range_server_stop due to canceling of threads
 	
 
 	struct mdhim_t *md = (struct mdhim_t *) data;
-    printf("Rank: %d - Entered %s \n", md->mdhim_rank, __FUNCTION__);
 	void *message;
 	int source; //The source of the message
 	int ret;
@@ -1008,7 +1003,6 @@ void *listener_thread(void *data) {
 
 	while (1) {
 		if (md->shutdown) {
-		    printf("Rank: %d - shutdown Listener\n", md->mdhim_rank);
 			break;
 		}
 
@@ -1036,7 +1030,6 @@ void *listener_thread(void *data) {
 		range_server_add_work(md, item);
 	}
 
-	printf("Quitting listener thread\n");
 	return NULL;
 }
 
@@ -1045,10 +1038,9 @@ void *listener_thread(void *data) {
  * Function for the thread that processes work in work queue
  */
 void *worker_thread(void *data) {
-	//mlog statements could cause a deadlock on range_server_stop due to canceling of threads
+	//Mlog statements could cause a deadlock on range_server_stop due to canceling of threads
 
 	struct mdhim_t *md = (struct mdhim_t *) data;
-    printf("Rank: %d - entered %s\n", md->mdhim_rank, __FUNCTION__);    
 	work_item *item;
 	int mtype;
 	int op, num_records, num_keys;
@@ -1077,8 +1069,8 @@ void *worker_thread(void *data) {
 			//Get the message type
 			mtype = ((struct mdhim_basem_t *) item->message)->mtype;
 
-			printf("Rank: %d - Got work item from queue with type: %d" 
-			     " from: %d\n", md->mdhim_rank, mtype, item->source);
+//			printf("Rank: %d - Got work item from queue with type: %d" 
+//			     " from: %d\n", md->mdhim_rank, mtype, item->source);
 
 			switch(mtype) {
 			case MDHIM_PUT:
@@ -1174,7 +1166,10 @@ int range_server_clean_oreqs(struct mdhim_t *md) {
 			continue;
 		}
 
+		pthread_mutex_lock(md->mdhim_comm_lock);
 		ret = MPI_Test((MPI_Request *)item->req, &flag, &status); 
+		pthread_mutex_unlock(md->mdhim_comm_lock);
+
 		if (ret == MPI_ERR_REQUEST) {
 			//flag = 1;
 		}

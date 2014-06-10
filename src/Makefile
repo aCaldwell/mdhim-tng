@@ -59,14 +59,11 @@ range_server.o: range_server.c
 mdhim_options.o : mdhim_options.c
 	$(CC) -c $^ $(CINC) $(CLIBS) -lleveldb
 
-mdhim-abridge.o : mdhim-abridge.c
-	$(CC) -c $^ $(CINC) $(CLIBS) -lleveldb
-
 lib:	
 	ar rvs libmdhim.a mdhim.o $(OBJS)
 
 dylib:
-	$(CC) -shared -o libmdhim.so.1 mdhim.o $(OBJS) -L/users/acaldwell/projects/sources/leveldb/leveldb-1.15.0/ -lleveldb
+	$(CC) -shared -o libmdhim.so.1 mdhim.o $(OBJS) -L$(LEVEL_DB_ROOT)/ -lleveldb
 
 clean:
 	rm -rf *.o libmdhim.a libmdhim.so.1

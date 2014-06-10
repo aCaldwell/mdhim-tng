@@ -41,7 +41,7 @@ struct mdhim_t *mdhimInit(void *appComm, struct mdhim_options_t *opts) {
 	comm = *((MPI_Comm *) appComm);
 	//Open mlog - stolen from plfs
 	ret = mlog_open((char *)"mdhim", 0,
-	    	opts->debug_level, opts->debug_level, (char *)"tstOUT.log", 0, MLOG_LOGPID, 0);
+	    	opts->debug_level, opts->debug_level, NULL, 0, MLOG_LOGPID, 0);
 
 	//Allocate memory for the main MDHIM structure
 	md = malloc(sizeof(struct mdhim_t));
@@ -59,6 +59,21 @@ struct mdhim_t *mdhimInit(void *appComm, struct mdhim_options_t *opts) {
 		return NULL;
 	}
 	
+	//Initialize mdhim_comm mutex
+	md->mdhim_comm_lock = malloc(sizeof(pthread_mutex_t));
+	if (!md->mdhim_comm_lock) {
+		mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
+		     "Error while allocating memory for client", 
+		     md->mdhim_rank);
+		return NULL;
+	}
+
+	if ((ret = pthread_mutex_init(md->mdhim_comm_lock, NULL)) != 0) {    
+		mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
+		     "Error while initializing mdhim_comm_lock", md->mdhim_rank);
+		return NULL;
+	}
+
 	//Dup the communicator passed in for barriers between clients
 	if ((ret = MPI_Comm_dup(comm, &md->mdhim_client_comm)) != MPI_SUCCESS) {
 		mlog(MDHIM_CLIENT_CRIT, "Error while initializing the MDHIM communicator");
@@ -122,7 +137,7 @@ struct mdhim_t *mdhimInit(void *appComm, struct mdhim_options_t *opts) {
 
 	//Create the default remote primary index
 	primary_index = create_global_index(md, opts->rserver_factor, opts->max_recs_per_slice, 
-					    opts->db_type, opts->db_key_type);
+					    opts->db_type, opts->db_key_type, "primary");
 	if (!primary_index) {
 		mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
 		     "Couldn't create the default index", 
@@ -146,6 +161,7 @@ struct mdhim_t *mdhimInit(void *appComm, struct mdhim_options_t *opts) {
  */
 int mdhimClose(struct mdhim_t *md) {
 	int ret;
+
 	MPI_Barrier(md->mdhim_client_comm);
 	//Stop range server if I'm a range server	
 	if (md->mdhim_rs && (ret = range_server_stop(md)) != MDHIM_SUCCESS) {
@@ -176,11 +192,17 @@ int mdhimClose(struct mdhim_t *md) {
 	free(md->indexes_lock);
 
 	MPI_Barrier(md->mdhim_client_comm);
+	//Destroy the client_comm_lock
+	if ((ret = pthread_mutex_destroy(md->mdhim_comm_lock)) != 0) {
+		return MDHIM_ERROR;
+	}
+	free(md->mdhim_comm_lock);    
+
 	MPI_Comm_free(&md->mdhim_client_comm);
 	MPI_Comm_free(&md->mdhim_comm);
-        free(md);
+    free(md);
 
-	//Close mlog
+	//Close MLog
 	mlog_close();
 
 	return MDHIM_SUCCESS;
@@ -360,7 +382,7 @@ struct mdhim_brm_t *mdhimPutSecondary(struct mdhim_t *md,
 
 	head = _create_brm(rm);
 	mdhim_full_release_msg(rm);
-
+	
 	return head;
 }
 
@@ -371,9 +393,9 @@ struct mdhim_brm_t *_bput_secondary_keys_from_info(struct mdhim_t *md,
 	int i, j;
 	void **primary_keys_to_send;
 	int *primary_key_lens_to_send;
-	struct mdhim_brm_t *head, *addition;
+	struct mdhim_brm_t *head, *new;
 
-	head = addition = NULL;
+	head = new = NULL;
 	for (i = 0; i < num_records; i++) {
 		primary_keys_to_send = 
 			malloc(secondary_info->num_keys[i] * sizeof(void *));
@@ -385,15 +407,15 @@ struct mdhim_brm_t *_bput_secondary_keys_from_info(struct mdhim_t *md,
 			primary_key_lens_to_send[j] = primary_key_lens[i];
 		}
 		
-		addition = _bput_records(md, secondary_info->secondary_index, 
+		new = _bput_records(md, secondary_info->secondary_index, 
 				    secondary_info->secondary_keys[i], 
 				    secondary_info->secondary_key_lens[i], 
 				    primary_keys_to_send, primary_key_lens_to_send, 
 				    secondary_info->num_keys[i]);
 		if (!head) {
-			head = addition;
-		} else if (addition) {
-			_concat_brm(head, addition);
+			head = new;
+		} else if (new) {
+			_concat_brm(head, new);
 		}
 
 		free(primary_keys_to_send);
@@ -420,9 +442,9 @@ struct mdhim_brm_t *mdhimBPut(struct mdhim_t *md,
 			      int num_records,
 			      struct secondary_bulk_info *secondary_global_info,
 			      struct secondary_bulk_info *secondary_local_info) {
-	struct mdhim_brm_t *head, *addition;
+	struct mdhim_brm_t *head, *new;
 
-	head = addition = NULL;
+	head = new = NULL;
 	if (!primary_keys || !primary_key_lens ||
 	    !primary_values || !primary_value_lens) {
 		return NULL;
@@ -438,10 +460,10 @@ struct mdhim_brm_t *mdhimBPut(struct mdhim_t *md,
 	if (secondary_local_info && secondary_local_info->secondary_index && 
 	    secondary_local_info->secondary_keys && 
 	    secondary_local_info->secondary_key_lens) {
-		addition = _bput_secondary_keys_from_info(md, secondary_local_info, primary_keys, 
+		new = _bput_secondary_keys_from_info(md, secondary_local_info, primary_keys, 
 						     primary_key_lens, num_records);
-		if (addition) {
-			_concat_brm(head, addition);
+		if (new) {
+			_concat_brm(head, new);
 		}	       
 	}
 	
@@ -449,10 +471,10 @@ struct mdhim_brm_t *mdhimBPut(struct mdhim_t *md,
 	if (secondary_global_info && secondary_global_info->secondary_index && 
 	    secondary_global_info->secondary_keys && 
 	    secondary_global_info->secondary_key_lens) {
-		addition = _bput_secondary_keys_from_info(md, secondary_global_info, primary_keys, 
+		new = _bput_secondary_keys_from_info(md, secondary_global_info, primary_keys, 
 						     primary_key_lens, num_records);
-		if (addition) {
-			_concat_brm(head, addition);
+		if (new) {
+			_concat_brm(head, new);
 		}	     
 	}	
 
@@ -475,9 +497,9 @@ struct mdhim_brm_t *mdhimBPutSecondary(struct mdhim_t *md, struct index_t *secon
 				       void **secondary_keys, int *secondary_key_lens, 
 				       void **primary_keys, int *primary_key_lens, 
 				       int num_records) {
-	struct mdhim_brm_t *head, *addition;
+	struct mdhim_brm_t *head, *new;
 
-	head = addition = NULL;
+	head = new = NULL;
 	if (!secondary_keys || !secondary_key_lens || 
 	    !primary_keys || !primary_key_lens) {
 		return NULL;
@@ -717,7 +739,7 @@ struct mdhim_brm_t *mdhimDelete(struct mdhim_t *md, struct index_t *index,
 	key_lens[0] = key_len;
 
 	brm_head = _bdel_records(md, index, keys, key_lens, 1);
-
+	
 	free(keys);
 	free(key_lens);
 

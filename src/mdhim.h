@@ -14,8 +14,8 @@
 #include "range_server.h"
 #include "messages.h"
 #include "partitioner.h"
-#include "Mlog2/mlog2.h"
-#include "Mlog2/mlogfacs2.h"
+#include "Mlog/mlog2.h"
+#include "Mlog/mlogfacs2.h"
 #include "mdhim_options.h"
 #include "indexes.h"
 #include "mdhim_private.h"
@@ -41,9 +41,12 @@ struct mdhim_t {
 	//This communicator will include every process in the application, but is separate from main the app
         //It is used for sending and receiving to and from the range servers
 	MPI_Comm mdhim_comm;   
+	pthread_mutex_t *mdhim_comm_lock;
+
 	//This communicator will include every process in the application, but is separate from the app
         //It is used for barriers for clients
 	MPI_Comm mdhim_client_comm;
+
 	//The rank in the mdhim_comm
 	int mdhim_rank;
 	//The size of mdhim_comm
