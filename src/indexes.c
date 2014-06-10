@@ -102,7 +102,9 @@ int read_manifest(struct mdhim_t *md, struct index_t *index) {
 	index_manifest_t manifest;
 
 	if ((fd = open_manifest(md, index, O_RDWR)) < 0) {
-		return MDHIM_ERROR;
+		mlog(MDHIM_SERVER_DBG, "Rank: %d - Couldn't open manifest file", 
+		     md->mdhim_rank);
+		return MDHIM_SUCCESS;
 	}
 
 	if ((ret = read(fd, &manifest, sizeof(manifest))) < 0) {
@@ -507,7 +509,7 @@ struct index_t *create_local_index(struct mdhim_t *md, int db_type, int key_type
 	size_t name_len = strlen(index_name);
 	char lower_name[name_len];
 
-	MPI_Barrier(md->mdhim_comm);
+	MPI_Barrier(md->mdhim_client_comm);
 
 	//Check that the key type makes sense
 	if (key_type < MDHIM_INT_KEY || key_type > MDHIM_BYTE_KEY) {
@@ -584,9 +586,10 @@ struct index_t *create_local_index(struct mdhim_t *md, int db_type, int key_type
 	//Read in the manifest file if the rangesrv_num is 1 for the primary index
 	if (rangesrv_num == 1 && 
 	    (ret = read_manifest(md, li)) != MDHIM_SUCCESS) {
-		mlog(MDHIM_SERVER_DBG, "MDHIM Rank: %d - " 
-		     "Warning: There was a problem reading or validating the manifest file",
+		mlog(MDHIM_SERVER_CRIT, "MDHIM Rank: %d - " 
+		     "Error: There was a problem reading or validating the manifest file",
 		     md->mdhim_rank);
+		MPI_Abort(md->mdhim_comm, 0);
 	}        
 
 	//Open the data store
@@ -644,7 +647,7 @@ struct index_t *create_global_index(struct mdhim_t *md, int server_factor,
 	size_t name_len = strlen(index_name);
 	char lower_name[name_len];
 
-	MPI_Barrier(md->mdhim_comm);
+	MPI_Barrier(md->mdhim_client_comm);
 
 	//Check that the key type makes sense
 	if (key_type < MDHIM_INT_KEY || key_type > MDHIM_BYTE_KEY) {
@@ -726,9 +729,10 @@ struct index_t *create_global_index(struct mdhim_t *md, int server_factor,
 	//Read in the manifest file if the rangesrv_num is 1 for the primary index
 	if (rangesrv_num == 1 && 
 	    (ret = read_manifest(md, gi)) != MDHIM_SUCCESS) {
-		mlog(MDHIM_SERVER_DBG, "MDHIM Rank: %d - " 
-		     "Warning: There was a problem reading or validating the manifest file",
+		mlog(MDHIM_SERVER_CRIT, "MDHIM Rank: %d - " 
+		     "Error: There was a problem reading or validating the manifest file",
 		     md->mdhim_rank);
+		MPI_Abort(md->mdhim_comm, 0);
 	}        
 
 	//Open the data store
@@ -1344,7 +1348,7 @@ int get_stat_flush_local(struct mdhim_t *md, struct index_t *index) {
 	recvsize = md->mdhim_comm_size * sizeof(int);
 	recvbuf = malloc(recvsize);
 	memset(recvbuf, 0, recvsize);
-	MPI_Barrier(md->mdhim_comm);
+	MPI_Barrier(md->mdhim_client_comm);
 	//All gather the number of items to send
 	if ((ret = MPI_Allgather(&num_items, 1, MPI_UNSIGNED, recvbuf, 1,
 				 MPI_INT, md->mdhim_comm)) != MPI_SUCCESS) {
@@ -1386,7 +1390,7 @@ int get_stat_flush_local(struct mdhim_t *md, struct index_t *index) {
 	recvbuf = malloc(recvsize);
 	memset(recvbuf, 0, recvsize);		
 
-	MPI_Barrier(md->mdhim_comm);
+	MPI_Barrier(md->mdhim_client_comm);
 	//The master server will receive the stat info from each rank in the range server comm
 	if ((ret = MPI_Allgatherv(sendbuf, sendsize, MPI_PACKED, recvbuf, recvcounts, displs,
 				   MPI_PACKED, md->mdhim_comm)) != MPI_SUCCESS) {
