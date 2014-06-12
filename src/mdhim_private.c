@@ -26,7 +26,7 @@ struct mdhim_rm_t *_put_record(struct mdhim_t *md, struct index_t *index,
 
 	//Get the range server this key will be sent to
 	if (put_index->type == LOCAL_INDEX) {
-		if ((rl = md->get_range_servers(md, lookup_index, value, value_len)) == 
+		if ((rl = get_range_servers(md, lookup_index, value, value_len)) == 
 		    NULL) {
 			mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
 			     "Error while determining range server in mdhimBPut", 
@@ -35,7 +35,7 @@ struct mdhim_rm_t *_put_record(struct mdhim_t *md, struct index_t *index,
 		}
 	} else {
 		//Get the range server this key will be sent to
-		if ((rl = md->get_range_servers(md, lookup_index, key, key_len)) == NULL) {
+		if ((rl = get_range_servers(md, lookup_index, key, key_len)) == NULL) {
 			mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
 			     "Error while determining range server in _put_record", 
 			     md->mdhim_rank);
@@ -161,7 +161,7 @@ struct mdhim_brm_t *_bput_records(struct mdhim_t *md, struct index_t *index,
 	for (i = 0; i < num_keys && i < MAX_BULK_OPS; i++) {
 		//Get the range server this key will be sent to
 		if (put_index->type == LOCAL_INDEX) {
-			if ((rl = md->get_range_servers(md, lookup_index, values[i], value_lens[i])) == 
+			if ((rl = get_range_servers(md, lookup_index, values[i], value_lens[i])) == 
 			    NULL) {
 				mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
 				     "Error while determining range server in mdhimBPut", 
@@ -169,7 +169,7 @@ struct mdhim_brm_t *_bput_records(struct mdhim_t *md, struct index_t *index,
 				continue;
 			}
 		} else {
-			if ((rl = md->get_range_servers(md, lookup_index, keys[i], key_lens[i])) == 
+			if ((rl = get_range_servers(md, lookup_index, keys[i], key_lens[i])) == 
 			    NULL) {
 				mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
 				     "Error while determining range server in mdhimBPut", 
@@ -275,7 +275,7 @@ struct mdhim_bgetrm_t *_bget_records(struct mdhim_t *md, struct index_t *index,
 		//Get the range server this key will be sent to
 		if ((op == MDHIM_GET_EQ || op == MDHIM_GET_PRIMARY_EQ) && 
 		    index->type != LOCAL_INDEX &&
-		    (rl = md->get_range_servers(md, index, keys[i], key_lens[i])) == 
+		    (rl = get_range_servers(md, index, keys[i], key_lens[i])) == 
 		    NULL) {
 			mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
 			     "Error while determining range server in mdhimBget", 
@@ -284,7 +284,7 @@ struct mdhim_bgetrm_t *_bget_records(struct mdhim_t *md, struct index_t *index,
 			return NULL;
 		} else if ((index->type == LOCAL_INDEX || 
 			   (op != MDHIM_GET_EQ && op != MDHIM_GET_PRIMARY_EQ)) &&
-			   (rl = md->get_range_servers_from_stats(md, index, keys[i], key_lens[i], op)) == 
+			   (rl = get_range_servers_from_stats(md, index, keys[i], key_lens[i], op)) == 
 			   NULL) {
 			mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
 			     "Error while determining range server in mdhimBget", 
@@ -388,14 +388,14 @@ struct mdhim_brm_t *_bdel_records(struct mdhim_t *md, struct index_t *index,
 	for (i = 0; i < num_keys && i < MAX_BULK_OPS; i++) {
 		//Get the range server this key will be sent to
 		if (index->type != LOCAL_INDEX && 
-		    (rl = md->get_range_servers(md, index, keys[i], key_lens[i])) == 
+		    (rl = get_range_servers(md, index, keys[i], key_lens[i])) == 
 		    NULL) {
 			mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
 			     "Error while determining range server in mdhimBdel", 
 			     md->mdhim_rank);
 			continue;
 		} else if (index->type == LOCAL_INDEX && 
-			   (rl = md->get_range_servers_from_stats(md, index, keys[i], 
+			   (rl = get_range_servers_from_stats(md, index, keys[i], 
 							      key_lens[i], MDHIM_GET_EQ)) == 
 			   NULL) {
 			mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 

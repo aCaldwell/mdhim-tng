@@ -31,9 +31,7 @@
  * @param opts Options structure for DB creation, such as name, and primary key type
  * @return mdhim_t* that contains info about this instance or NULL if there was an error
  */
-struct mdhim_t *mdhimInit(void *appComm, struct mdhim_options_t *opts,
-                          rangesrv_list *(*fptrget_range_servers)(struct mdhim_t *, struct index_t *, void *, int),
-                          rangesrv_list *(*fptrget_range_servers_from_stats)(struct mdhim_t *, struct index_t *, void *, int, int)) {
+struct mdhim_t *mdhimInit(void *appComm, struct mdhim_options_t *opts) {
 	int ret;
 	struct mdhim_t *md;
 	struct index_t *primary_index;
@@ -60,6 +58,21 @@ struct mdhim_t *mdhimInit(void *appComm, struct mdhim_options_t *opts,
 		return NULL;
 	}
 	
+	//Initialize mdhim_comm mutex
+	md->mdhim_comm_lock = malloc(sizeof(pthread_mutex_t));
+	if (!md->mdhim_comm_lock) {
+		mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
+		     "Error while allocating memory for client", 
+		     md->mdhim_rank);
+		return NULL;
+	}
+
+	if ((ret = pthread_mutex_init(md->mdhim_comm_lock, NULL)) != 0) {    
+		mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
+		     "Error while initializing mdhim_comm_lock", md->mdhim_rank);
+		return NULL;
+	}
+
 	//Dup the communicator passed in for barriers between clients
 	if ((ret = MPI_Comm_dup(comm, &md->mdhim_client_comm)) != MPI_SUCCESS) {
 		mlog(MDHIM_CLIENT_CRIT, "Error while initializing the MDHIM communicator");
@@ -131,20 +144,6 @@ struct mdhim_t *mdhimInit(void *appComm, struct mdhim_options_t *opts,
 		return NULL;
 	}
 	md->primary_index = primary_index;
-
-    // If the user provided a function pointer to their own get_range_servers
-	if(!fptrget_range_servers) {
-        md->get_range_servers = get_range_servers;
-    }else{
-        md->get_range_servers = fptrget_range_servers;
-    }
-
-    // If the user provided a function pointer to their own get_range_servers_from_stats
-	if(!fptrget_range_servers) {
-        md->get_range_servers_from_stats = get_range_servers_from_stats;
-    }else{
-        md->get_range_servers_from_stats = fptrget_range_servers_from_stats;
-    }
 	
 	//Set the local receive queue to NULL - used for sending and receiving to/from ourselves
 	md->receive_msg = NULL;
@@ -192,6 +191,12 @@ int mdhimClose(struct mdhim_t *md) {
 	free(md->indexes_lock);
 
 	MPI_Barrier(md->mdhim_client_comm);
+	//Destroy the client_comm_lock
+	if ((ret = pthread_mutex_destroy(md->mdhim_comm_lock)) != 0) {
+		return MDHIM_ERROR;
+	}
+	free(md->mdhim_comm_lock);    
+
 	MPI_Comm_free(&md->mdhim_client_comm);
 	MPI_Comm_free(&md->mdhim_comm);
     free(md);

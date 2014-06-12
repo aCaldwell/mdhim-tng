@@ -31,21 +31,6 @@ extern "C"
 #define SECONDARY_GLOBAL_INFO 1
 #define SECONDARY_LOCAL_INFO 2
 
-typedef struct rangesrv_list RangeSrv_List;
-
-/*
-* function pointer to user defined
-* get_range_servers
-*/
-typedef RangeSrv_List *(*fptrGetRangeServers)(struct mdhim_t *, struct index_t *, void *, int);
-
-/*
-* function pointer to user defined
-* get_range_servers_from_stats
-*/
-typedef RangeSrv_List *(*fptrGetRangeServersFromStats)(struct mdhim_t *, struct index_t *,
-                                                        void *, int, int);
-
 /* 
  * mdhim data 
  * Contains client communicator
@@ -55,10 +40,13 @@ typedef RangeSrv_List *(*fptrGetRangeServersFromStats)(struct mdhim_t *, struct 
 struct mdhim_t {
 	//This communicator will include every process in the application, but is separate from main the app
         //It is used for sending and receiving to and from the range servers
-	MPI_Comm mdhim_comm;   
+///It is used for sending and receiving to and from the range servers	MPI_Comm mdhim_comm;   
+	pthread_mutex_t *mdhim_comm_lock;
+
 	//This communicator will include every process in the application, but is separate from the app
         //It is used for barriers for clients
 	MPI_Comm mdhim_client_comm;
+
 	//The rank in the mdhim_comm
 	int mdhim_rank;
 	//The size of mdhim_comm
@@ -84,11 +72,6 @@ struct mdhim_t {
 	void *receive_msg;
         //Options for DB creation
         mdhim_options_t *db_opts;
-
-    // Pointers to get_range_server and get_range_server_from_stats
-    fptrGetRangeServers          get_range_servers;
-    fptrGetRangeServersFromStats get_range_servers_from_stats;
-        
 };
 
 struct secondary_info {
@@ -107,9 +90,7 @@ struct secondary_bulk_info {
 	int info_type;
 };
 
-struct mdhim_t *mdhimInit(void *appComm, struct mdhim_options_t *opts, 
-                        RangeSrv_List *(*fptrGetRangeServers)(struct mdhim_t *, struct index_t *, void *, int),
-                        RangeSrv_List *(*fptrGetRangeServersFromStats)(struct mdhim_t *, struct index_t *, void *, int, int));
+struct mdhim_t *mdhimInit(void *appComm, struct mdhim_options_t *opts);
 int mdhimClose(struct mdhim_t *md);
 int mdhimCommit(struct mdhim_t *md, struct index_t *index);
 int mdhimStatFlush(struct mdhim_t *md, struct index_t *index);

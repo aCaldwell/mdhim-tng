@@ -939,6 +939,8 @@ int index_init_comm(struct mdhim_t *md, struct index_t *bi) {
 		MPI_Comm_free(&new_comm);
 	}
 
+	MPI_Group_free(&orig);
+	MPI_Group_free(&new_group);
 	free(ranks);
 	return MDHIM_SUCCESS;
 }
@@ -1355,7 +1357,7 @@ int get_stat_flush_local(struct mdhim_t *md, struct index_t *index) {
 	recvsize = md->mdhim_comm_size * sizeof(int);
 	recvbuf = malloc(recvsize);
 	memset(recvbuf, 0, recvsize);
-	MPI_Barrier(md->mdhim_comm);
+	MPI_Barrier(md->mdhim_client_comm);
 	//All gather the number of items to send
 	if ((ret = MPI_Allgather(&num_items, 1, MPI_UNSIGNED, recvbuf, 1,
 				 MPI_INT, md->mdhim_comm)) != MPI_SUCCESS) {
@@ -1397,7 +1399,7 @@ int get_stat_flush_local(struct mdhim_t *md, struct index_t *index) {
 	recvbuf = malloc(recvsize);
 	memset(recvbuf, 0, recvsize);		
 
-	MPI_Barrier(md->mdhim_comm);
+	MPI_Barrier(md->mdhim_client_comm);
 	//The master server will receive the stat info from each rank in the range server comm
 	if ((ret = MPI_Allgatherv(sendbuf, sendsize, MPI_PACKED, recvbuf, recvcounts, displs,
 				   MPI_PACKED, md->mdhim_comm)) != MPI_SUCCESS) {
