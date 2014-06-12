@@ -8,7 +8,6 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <errno.h>
-#include <ctype.h>
 #include "mdhim.h"
 #include "indexes.h"
 
@@ -336,6 +335,9 @@ int load_stats(struct mdhim_t *md, struct index_t *index) {
 		free(*val);
 	}
 
+	if (old_slice) {
+		free(old_slice);
+	}
 	free(val);
 	free(val_len);
 	free(key_len);
@@ -502,12 +504,10 @@ uint32_t get_num_range_servers(struct mdhim_t *md, struct index_t *rindex) {
  * @param  md  main MDHIM struct
  * @return     MDHIM_ERROR on error, otherwise the index identifier
  */
-struct index_t *create_local_index(struct mdhim_t *md, int db_type, int key_type, char index_name[]) {
-	struct index_t *li, *check = NULL;
+struct index_t *create_local_index(struct mdhim_t *md, int db_type, int key_type) {
+	struct index_t *li;
 	uint32_t rangesrv_num;
 	int ret;
-	size_t name_len = strlen(index_name);
-	char lower_name[name_len];
 
 	MPI_Barrier(md->mdhim_client_comm);
 
@@ -540,18 +540,6 @@ struct index_t *create_local_index(struct mdhim_t *md, int db_type, int key_type
 	li->myinfo.rank = md->mdhim_rank;
 	li->primary_id = md->primary_index->id;
 	li->stats = NULL;
-	// Check to see if the name passed in has already been taken
-	HASH_FIND_STR(md->indexes, index_name, check);
-	if(check) {
-        goto done;
-    }
-    
-    int i;
-    for(i=0; i<name_len; i++){
-        lower_name[i] = tolower(index_name[i]);
-    }
-    li->name = lower_name;
-	
 
 	//Figure out how many range servers we could have based on the range server factor
 	li->num_rangesrvs = get_num_range_servers(md, li);		
@@ -565,7 +553,6 @@ struct index_t *create_local_index(struct mdhim_t *md, int db_type, int key_type
 
 	//Add it to the hash table
 	HASH_ADD_INT(md->indexes, id, li);
-	HASH_ADD_STR(md->indexes, name, li);
 
 	//Test if I'm a range server and get the range server number
 	if ((rangesrv_num = is_range_server(md, md->mdhim_rank, li)) == MDHIM_ERROR) {	
@@ -597,6 +584,7 @@ struct index_t *create_local_index(struct mdhim_t *md, int db_type, int key_type
 	if (ret != MDHIM_SUCCESS) {
 		mlog(MDHIM_CLIENT_CRIT, "Rank: %d - Error opening data store for index: %d", 
 		     md->mdhim_rank, li->id);
+		MPI_Abort(md->mdhim_comm, 0);
 	}
 
 	//Initialize the range server threads if they haven't been already
@@ -616,12 +604,6 @@ done:
 		return NULL;
 	}
 
-	if(check) {
-	    mlog(MDHIM_CLIENT_CRIT, "Rank %d - Error creating local index: Name %s, already exists",
-	            md->mdhim_rank, index_name);
-        return NULL;
-    }
-
 	return li;
 }
 
@@ -640,12 +622,10 @@ done:
 
 struct index_t *create_global_index(struct mdhim_t *md, int server_factor, 
 				    int max_recs_per_slice, 
-				    int db_type, int key_type, char index_name[]) {
-	struct index_t *gi, *check = NULL;
+				    int db_type, int key_type) {
+	struct index_t *gi;
 	uint32_t rangesrv_num;
 	int ret;
-	size_t name_len = strlen(index_name);
-	char lower_name[name_len];
 
 	MPI_Barrier(md->mdhim_client_comm);
 
@@ -678,16 +658,6 @@ struct index_t *create_global_index(struct mdhim_t *md, int server_factor,
 	gi->myinfo.rank = md->mdhim_rank;
 	gi->primary_id = gi->type == SECONDARY_INDEX ? md->primary_index->id : -1;
 	gi->stats = NULL;
-	// Check to see if the name passed in has already been taken
-	HASH_FIND_STR(md->indexes, index_name, check);
-	if(check) {
-        goto done;
-    }
-    int i;
-    for(i=0; i<name_len; i++) {
-        lower_name[i] = tolower(index_name[i]);
-    }
-    gi->name = gi->id > 0 ? lower_name : "primary";
 
 	//Figure out how many range servers we could have based on the range server factor
 	gi->num_rangesrvs = get_num_range_servers(md, gi);		
@@ -701,7 +671,6 @@ struct index_t *create_global_index(struct mdhim_t *md, int server_factor,
 
 	//Add it to the hash table
 	HASH_ADD_INT(md->indexes, id, gi);
-	HASH_ADD_STR(md->indexes, name, gi);
 
 	//Test if I'm a range server and get the range server number
 	if ((rangesrv_num = is_range_server(md, md->mdhim_rank, gi)) == MDHIM_ERROR) {	
@@ -758,12 +727,6 @@ done:
 	if (!gi) {
 		return NULL;
 	}
-
-	if(check) {
-	    mlog(MDHIM_CLIENT_CRIT, "Rank %d - Error creating global index: Name %s, already exists",
-	            md->mdhim_rank, index_name);
-        return NULL;
-    }
 
 	return gi;
 }
@@ -939,6 +902,8 @@ int index_init_comm(struct mdhim_t *md, struct index_t *bi) {
 		MPI_Comm_free(&new_comm);
 	}
 
+	MPI_Group_free(&orig);
+	MPI_Group_free(&new_group);
 	free(ranks);
 	return MDHIM_SUCCESS;
 }
@@ -964,37 +929,6 @@ struct index_t *get_index(struct mdhim_t *md, int index_id) {
 
 	return index;
 }
-
-
-/* 
- * ===  FUNCTION  ======================================================================
- *         Name:  get_index_by_name
- *  Description:  Retrieve the index by name
- * =====================================================================================
- */
-struct index_t *
-get_index_by_name ( struct mdhim_t *md, char index_name[] )
-{
-    struct index_t *index;
-
-    //Acquire the lock to update indexes
-    while(pthread_rwlock_wrlock(md->indexes_lock) == EBUSY) {
-        usleep(10);
-    }
-
-    index = NULL;
-    if(strcmp(index_name, "") != 0) {
-        HASH_FIND_STR(md->indexes, index_name, index);
-    }
-
-    if(pthread_rwlock_unlock(md->indexes_lock) != 0) {
-        mlog(MDHIM_CLIENT_CRIT, "RankL %d - Error unlocking the indexes_lock",
-                md->mdhim_rank);
-        return NULL;
-    }
-
-    return index;
-}		/* -----  end of function get_index_by_name  ----- */
 
 void indexes_release(struct mdhim_t *md) {
 	struct index_t *cur_indx, *tmp_indx;
