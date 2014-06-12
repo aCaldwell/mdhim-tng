@@ -5,7 +5,6 @@
  */
 
 #include <stdlib.h>
-#include <unistd.h>
 #include "mdhim.h"
 #include "range_server.h"
 #include "client.h"
@@ -41,7 +40,7 @@ struct mdhim_t *mdhimInit(void *appComm, struct mdhim_options_t *opts) {
 	comm = *((MPI_Comm *) appComm);
 	//Open mlog - stolen from plfs
 	ret = mlog_open((char *)"mdhim", 0,
-	    	opts->debug_level, opts->debug_level, NULL, 0, MLOG_LOGPID, 0);
+	        opts->debug_level, opts->debug_level, NULL, 0, MLOG_LOGPID, 0);
 
 	//Allocate memory for the main MDHIM structure
 	md = malloc(sizeof(struct mdhim_t));
@@ -137,7 +136,7 @@ struct mdhim_t *mdhimInit(void *appComm, struct mdhim_options_t *opts) {
 
 	//Create the default remote primary index
 	primary_index = create_global_index(md, opts->rserver_factor, opts->max_recs_per_slice, 
-					    opts->db_type, opts->db_key_type, "primary");
+					    opts->db_type, opts->db_key_type);
 	if (!primary_index) {
 		mlog(MDHIM_CLIENT_CRIT, "MDHIM Rank: %d - " 
 		     "Couldn't create the default index", 
