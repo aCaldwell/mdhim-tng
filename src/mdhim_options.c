@@ -20,13 +20,14 @@ struct mdhim_options_t *mdhim_options_init()
     
 	opts->db_path = "./";
 	opts->db_name = "mdhimTstDB-";
-	opts->manifest_path ="./mdhim_manifest_";
+	opts->manifest_path = NULL;
 	opts->db_type = 2;
 	opts->db_key_type = 1;
 	opts->db_create_new = 1;
 	opts->db_value_append = MDHIM_DB_OVERWRITE;
 	
 	opts->db_host = "localhost";
+	opts->dbs_host = "localhost";
 	opts->db_user = "test";
 	opts->db_upswd = "pass";
 	opts->dbs_user = "test";
@@ -39,6 +40,8 @@ struct mdhim_options_t *mdhim_options_init()
 	opts->db_paths = NULL;
 	opts->num_paths = 0;
 	opts->num_wthreads = 1;
+
+	set_manifest_path(opts, "./");
 	return opts;
 }
 
@@ -47,7 +50,8 @@ int check_path_length(mdhim_options_t* opts, char *path) {
 	int ret = 0;
 
 	path_len = strlen(path) + 1;
-	if ((path_len + strlen(opts->db_name)) < PATH_MAX &&
+	if (((!opts->db_name && path_len < PATH_MAX) || 
+	     ((path_len + strlen(opts->db_name)) < PATH_MAX)) &&
 	    (path_len + strlen(MANIFEST_FILE_NAME)) < PATH_MAX) {
 		ret = 1;
 	} else {
@@ -61,16 +65,22 @@ void set_manifest_path(mdhim_options_t* opts, char *path) {
 	char *manifest_path;
 	int path_len = 0;
 
+	if (opts->manifest_path) {
+	  free(opts->manifest_path);
+	  opts->manifest_path = NULL;
+	}
+
 	path_len = strlen(path) + strlen(MANIFEST_FILE_NAME) + 1;
 	manifest_path = malloc(path_len);
 	sprintf(manifest_path, "%s%s", path, MANIFEST_FILE_NAME);
 	opts->manifest_path = manifest_path;
 }
 
-void mdhim_options_set_login_c(mdhim_options_t* opts, char* db_hl, char *db_ln, char *db_pw, char *dbs_ln, char *dbs_pw){
+void mdhim_options_set_login_c(mdhim_options_t* opts, char* db_hl, char *db_ln, char *db_pw, char *dbs_hl, char *dbs_ln, char *dbs_pw){
 	opts->db_host = db_hl;
 	opts->db_user = db_ln;
 	opts->db_upswd = db_pw;
+	opts->dbs_host = dbs_hl;	
 	opts->dbs_user = dbs_ln;
 	opts->dbs_upswd = dbs_pw;
 	
@@ -176,5 +186,6 @@ void mdhim_options_destroy(mdhim_options_t *opts) {
 		free(opts->db_paths[i]);
 	}
 
+	free(opts->manifest_path);
 	free(opts);
 };
