@@ -52,6 +52,16 @@ struct rangesrv_list {
 	rangesrv_list *next;
 };
 
+
+struct partitioner_t {
+    void (*init)();         // The initializing function for the partitoner
+    void (*release)();      // The function that will destroy the partitioner
+    rangesrv_list * (* get_range_servers)(); // How to find the rangeservers
+    rangesrv_list * (* get_range_servers_from_stats)(); // How to find the rangeservers by operations
+};               /* ----------  end of struct partitioner_t  ---------- */
+
+typedef struct partitioner_t Partitioner_t;
+
 void partitioner_init();
 void partitioner_release();
 rangesrv_list *get_range_servers(struct mdhim_t *md, struct index_t *index,
